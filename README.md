@@ -1,2 +1,4 @@
 # spexs2.js
-SPEXS algorithm in JavaScript
+
+Simple version of the SPEXS algorithm in JavaScript.
+See https://github.com/egonelbre/spexs2 for more information.

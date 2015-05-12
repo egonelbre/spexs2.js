@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8">
+	<title>spexs2</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<script src="lib/spexs.js"></script>
+	<script src="lib/extender.js"></script>
+	<script src="lib/strings.js"></script>
+	<script src="lib/named.js"></script>
+</head>
+<style>
+* { box-sizing: border-box; }
+html, body {
+	margin: 0;
+	padding: 0;
+
+	font-family: RobotoDraft,Roboto,Helvetica Neue,Helvetica,Arial,sans-serif;
+  	font-weight: 300;
+	line-height: 1.2;
+	color: #333333;
+}
+body {
+	max-width: 700px;
+	margin: 0 auto;
+}
+h1 {
+	margin-top: 70px;
+	border-bottom: 1px solid #ccc;
+}
+#inputs {
+	width: 100%;
+	display: flex;
+}
+#inputs div {
+	flex: 1;
+	margin: 5px;
+}
+#inputs div textarea {
+	width: 100%;
+	height: 300px;
+	padding: 10px;
+	border-radius: 3px;
+}
+
+button {
+	background: #fff;
+	border: 1px solid #888;
+	border-radius: 3px;
+	padding: 5px 15px;
+	margin: 0px 5px;
+	cursor: pointer;
+}
+
+#actions button {
+	display: block;
+	margin: 0 auto;
+	min-width: 50%;
+}
+
+#results {
+	border: 1px solid rgb(169, 169, 169);
+	min-height: 100px;
+	border-radius: 3px;
+}
+</style>
+<body>
+	<h1>SPEXS</h1>
+	<div id="inputs">
+		<div>
+			<h2>Positive</h2>
+			<textarea id="positive"></textarea>
+		</div>
+		<div>
+			<h2>Negative</h2>
+			<textarea id="negative"></textarea>
+		</div>
+	</div>
+	<div id="actions">
+		<button id="search">Search</button>
+	</div>
+	<div>
+		<h2>Results</h2>
+		<div id="results">
+			
+		</div>
+	</div>
+</body>
+<script src="example.data.js"></script>
+<script>
+	var positives = document.getElementById("positive");
+	positives.value = DefaultData.positives.join("\n");
+	var negatives = document.getElementById("negative");
+	negatives.value = DefaultData.negatives.join("\n");
+
+	document.getElementById("search").onclick = function(){
+		var dataset = new NamedDataset({
+			positives: positives.value.split("\n"),
+			negatives: negatives.value.split("\n")
+		});
+
+		var search = new SPEXS.Search({
+			dataset: dataset,
+			extender: new Extender.Regular(),
+			canExtend: function(q){
+				var occs = dataset.occurrences(q.positions);
+				return occs.positives > 5;
+			},
+			canOutput: function(q){
+				var occs = dataset.occurrences(q.positions);
+				return occs.positives > occs.negatives;
+			}
+		});
+
+		search.run();
+		search.output.sort(function(a,b){
+			return b.positions.length - a.positions.length;
+		});
+		search.output = search.output.slice(0, 30);
+
+		var results = document.getElementById("results");
+		var table = "<table>";
+		table += "<tr><td>Pattern</td><td>#Positives</td><td>#Negatives</td></tr>";
+		for(var i = 0; i < search.output.length; i += 1){
+			var q = search.output[i];
+			var occs = dataset.occurrences(q.positions);
+			table += "<tr><td>" + q.toString() + "</td><td>" + occs.positives + "</td><td>" + occs.negatives  + "</td></tr>";
+		}
+		table += "</table>"
+		results.innerHTML = table;
+	};
+</script>
